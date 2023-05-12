@@ -1,5 +1,6 @@
-package com.example.demo;
+package com.example.demo.servlet.user;
 
+import com.example.demo.service.EmployeeService;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -14,7 +15,8 @@ public class DeleteServlet extends HttpServlet {
 
         String sid = request.getParameter("id");
         int id = Integer.parseInt(sid);
-        EmployeeRepository.delete(id);
-        response.sendRedirect("viewServlet");
+        EmployeeService.deleteById(id);
+        EmployeeService.output(response, "viewServlet", "Sorry! Cannot delete the record#" + sid,
+            "text/html", "UTF-8");
     }
 }

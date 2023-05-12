@@ -1,5 +1,6 @@
-package com.example.demo;
+package com.example.demo.servlet.user;
 
+import com.example.demo.service.EmployeeService;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -18,9 +19,7 @@ public class ViewByIDServlet extends HttpServlet {
         String sid = request.getParameter("id");
         int id = Integer.parseInt(sid);
 
-        Employee employee = EmployeeRepository.getEmployeeById(id);
-
-        out.print(employee);
+        out.print(EmployeeService.getById(id));
         out.close();
     }
 }

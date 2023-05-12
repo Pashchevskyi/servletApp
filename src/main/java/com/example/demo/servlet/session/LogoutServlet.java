@@ -1,4 +1,4 @@
-package com.example.demo.session;
+package com.example.demo.servlet.session;
 
 import java.io.IOException;
 import java.io.PrintWriter;

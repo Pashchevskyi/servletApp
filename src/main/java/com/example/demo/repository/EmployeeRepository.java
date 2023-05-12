@@ -1,4 +1,7 @@
-package com.example.demo;
+package com.example.demo.repository;
+
+import com.example.demo.connection.ConnectionManager;
+import com.example.demo.model.Employee;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -6,102 +9,76 @@ import java.util.List;
 
 public class EmployeeRepository {
 
-    /*public static void main(String[] args) {
-        getConnection();
+    private static OperationType theLatestOperationType;
 
-        Employee employee = new Employee();
-
-        employee.setName("oleg");
-        employee.setEmail(" ");
-        employee.setCountry(" ");
-        save(employee);
-    }*/
-
-    public static Connection getConnection() {
-
-        Connection connection = null;
-        String url = "jdbc:postgresql://localhost:5432/employee";
-        String user = "postgres";
-        String password = "postgres";
-
-        try {
-            connection = DriverManager.getConnection(url, user, password);
-            if (connection != null) {
-                System.out.println("Connected to the PostgreSQL server successfully.");
-            } else {
-                System.out.println("Failed to make connection!");
-            }
-        } catch (SQLException sqlException) {
-            System.out.println(sqlException);
-        }
-        return connection;
-    }
-
-    public static int save(Employee employee) {
+    public static int create(Employee employee) {
         int status = 0;
+        theLatestOperationType = OperationType.CREATE;
+        Connection connection = ConnectionManager.createConnection();
         try {
-            Connection connection = EmployeeRepository.getConnection();
-            PreparedStatement ps = connection.prepareStatement("insert into users(name,email,country) values (?,?,?)");
+            PreparedStatement ps = connection
+                .prepareStatement("insert into users(name,email,country) values (?,?,?)");
             ps.setString(1, employee.getName());
             ps.setString(2, employee.getEmail());
             ps.setString(3, employee.getCountry());
 
             status = ps.executeUpdate();
-            connection.close();
 
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+        ConnectionManager.closeConnection();
         return status;
     }
 
     public static int update(Employee employee) {
 
         int status = 0;
-
+        theLatestOperationType = OperationType.UPDATE;
+        Connection connection = ConnectionManager.createConnection();
         try {
-            Connection connection = EmployeeRepository.getConnection();
-            PreparedStatement ps = connection.prepareStatement("update users set name=?,email=?,country=? where id=?");
+            PreparedStatement ps = connection
+                .prepareStatement("update users set name=?,email=?,country=? where id=? and is_deleted=?");
             ps.setString(1, employee.getName());
             ps.setString(2, employee.getEmail());
             ps.setString(3, employee.getCountry());
             ps.setInt(4, employee.getId());
+            ps.setBoolean(5, false);
 
             status = ps.executeUpdate();
-            connection.close();
 
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
+        ConnectionManager.closeConnection();
         return status;
     }
 
     public static int delete(int id) {
-
         int status = 0;
-
+        theLatestOperationType = OperationType.DELETE;
+        Connection connection = ConnectionManager.createConnection();
         try {
-            Connection connection = EmployeeRepository.getConnection();
-            PreparedStatement ps = connection.prepareStatement("delete from users where id=?");
-            ps.setInt(1, id);
+            PreparedStatement ps = connection.prepareStatement("update users set is_deleted=? where id=?");
+            ps.setBoolean(1, true);
+            ps.setInt(2, id);
             status = ps.executeUpdate();
-
-            connection.close();
 
         } catch (SQLException exception) {
             exception.printStackTrace();
         }
+        ConnectionManager.closeConnection();
         return status;
     }
 
     public static Employee getEmployeeById(int id) {
-
+        theLatestOperationType = OperationType.READ;
         Employee employee = new Employee();
-
+        Connection connection = ConnectionManager.createConnection();
         try {
-            Connection connection = EmployeeRepository.getConnection();
-            PreparedStatement ps = connection.prepareStatement("select * from users where id=?");
+            PreparedStatement ps = connection.prepareStatement("select * from users where id=? and is_deleted=?");
             ps.setInt(1, id);
+            ps.setBoolean(2, false);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 employee.setId(rs.getInt(1));
@@ -109,21 +86,21 @@ public class EmployeeRepository {
                 employee.setEmail(rs.getString(3));
                 employee.setCountry(rs.getString(4));
             }
-            connection.close();
 
         } catch (SQLException exception) {
             exception.printStackTrace();
         }
+        ConnectionManager.closeConnection();
         return employee;
     }
 
     public static List<Employee> getAllEmployees() {
-
         List<Employee> listEmployees = new ArrayList<>();
-
+        theLatestOperationType = OperationType.READ_ALL;
+        Connection connection = ConnectionManager.createConnection();
         try {
-            Connection connection = EmployeeRepository.getConnection();
-            PreparedStatement ps = connection.prepareStatement("select * from users");
+            PreparedStatement ps = connection.prepareStatement("select * from users where is_deleted=?");
+            ps.setBoolean(1, false);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -137,11 +114,15 @@ public class EmployeeRepository {
 
                 listEmployees.add(employee);
             }
-            connection.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        ConnectionManager.closeConnection();
         return listEmployees;
+    }
+
+    public static OperationType getTheLatestOperationType() {
+        return theLatestOperationType;
     }
 }

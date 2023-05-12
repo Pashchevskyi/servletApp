@@ -1,3 +1,5 @@
+CREATE DATABASE employee;
+
 CREATE TABLE users
 (
     id      Serial NOT NULL,
@@ -5,4 +7,4 @@ CREATE TABLE users
     email   VARCHAR(255),
     country VARCHAR(255),
     PRIMARY KEY (id)
-)
+);

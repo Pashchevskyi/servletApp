@@ -1,5 +1,10 @@
 package com.example.demo.filters;
 
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
@@ -12,8 +17,25 @@ import java.io.PrintWriter;
 public class AuthenticationFilter implements Filter {
 
     private ServletContext context;
+    private final Set<String> allowedURNs;
 
-    public void init(FilterConfig fConfig) throws ServletException {
+    private final Properties properties;
+
+    public AuthenticationFilter() {
+        allowedURNs = new HashSet<>();
+        allowedURNs.add("/demo/saveServlet");
+        allowedURNs.add("/demo/loginServlet");
+        allowedURNs.add("/demo/viewServlet");
+
+        properties = new Properties();
+        try (InputStreamReader reader = new FileReader("./src/main/resources/application.properties")) {
+            properties.load(reader);
+        } catch (IOException e) {
+            System.err.println("<<< Exception: " + e.getMessage());
+        }
+    }
+
+    public void init(FilterConfig fConfig) {
         this.context = fConfig.getServletContext();
         this.context.log(">>> AuthenticationFilter initialized");
     }
@@ -24,12 +46,14 @@ public class AuthenticationFilter implements Filter {
         HttpServletResponse res = (HttpServletResponse) response;
 
         String uri = req.getRequestURI();
-
-        this.context.log("Requested Resource::http://localhost:8080" + uri);
+        String requestedResource = "Requested Resource::"+properties.getProperty("server.scheme")+
+            "://"+properties.getProperty("server.host")+":"+properties.getProperty("server.port") +
+            uri;
+        this.context.log(requestedResource);
 
         HttpSession session = req.getSession(false);
 
-        if (session == null && !(uri.endsWith("demo/saveServlet") || uri.endsWith("demo/loginServlet") || uri.endsWith("demo/viewServlet"))) {
+        if (session == null && !(allowedURNs.contains(uri))) {
             this.context.log("<<< Unauthorized access request");
             PrintWriter out = res.getWriter();
             out.println("No access!!!");

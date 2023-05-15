@@ -1,6 +1,6 @@
 package com.example.demo.servlet.session;
 
-import javax.servlet.ServletException;
+import com.example.demo.service.UserService;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
@@ -14,23 +14,21 @@ public class LoginServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    private final UserService userService;
 
-        // Это название 2-х параметров, которые мы передаем
+    public LoginServlet() {
+        userService = new UserService();
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        // here is values of 2 parameters we transfer
         String user = request.getParameter("user");
         String pwd = request.getParameter("pwd");
-        // Это значение наших параметров
-        String userID = "admin";
-        String password = "password";
 
-        if (userID.equals(user) && password.equals(pwd)) {
-            HttpSession session = request.getSession();
-            session.setAttribute("user", "user");
-            //setting session to expiry in 30 mins
-            session.setMaxInactiveInterval(30 * 60);
-            Cookie userName = new Cookie("user", user);
-            userName.setMaxAge(30 * 60);
-            response.addCookie(userName);
+        if (userService.checkUser(user, pwd)) {
+            userService.setSession(request, "user", "user");
+            userService.setCookie(response, user);
             PrintWriter out = response.getWriter();
             out.println("Welcome back to the team, " + user + "!");
         } else {
